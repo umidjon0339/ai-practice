@@ -1,0 +1,28 @@
+# Environment files (contain real secrets)
+.env
+.env.*
+!.env.example
+
+# Virtual environment
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.ipynb_checkpoints/
+
+# Model artifacts & weights (regenerable via train.py / auto-download)
+*.pkl
+*.joblib
+*.keras
+*.h5
+*.pt
+cnn/yolo/weights/
+
+# Streamlit / tooling caches
+.streamlit/
+.ultralytics/
+runs/

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn MCP — The Model Context Protocol, Visually</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161a23;
+    --panel-2: #1c2230;
+    --border: #2a3242;
+    --text: #e6e9f0;
+    --muted: #9aa3b5;
+    --accent: #7c9cff;
+    --accent-2: #52d6a2;
+    --warn: #ffb86c;
+    --pink: #ff6bcb;
+    --purple: #b58cff;
+    --red: #ff6b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  header.hero {
+    padding: 72px 0 48px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(ellipse at top, rgba(124,156,255,.12), transparent 55%),
+      var(--bg);
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+  .badges { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .badge b { color: var(--text); }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section h2 {
+    font-size: 1.7rem;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+  section h2 .num {
+    color: var(--accent);
+    font-family: ui-monospace, monospace;
+    margin-right: 10px;
+    font-size: 1.2rem;
+  }
+  section .lede { color: var(--muted); max-width: 760px; margin-bottom: 28px; }
+  h3 { font-size: 1.15rem; margin: 24px 0 10px; }
+
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h4 { margin-bottom: 8px; font-size: 1.05rem; }
+  .card p { color: var(--muted); font-size: .95rem; }
+  .card code, .tag {
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: .85em;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    color: var(--accent);
+  }
+  .tag { color: var(--warn); }
+
+  .diagram-frame {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+  .diagram-frame svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .caption {
+    text-align: center;
+    color: var(--muted);
+    font-size: .88rem;
+    margin-top: 10px;
+  }
+
+  pre {
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    overflow-x: auto;
+    font-size: .9rem;
+    line-height: 1.55;
+    margin: 16px 0;
+  }
+  code { font-family: ui-monospace, "SF Mono", Consolas, monospace; }
+  pre code .k { color: var(--pink); }
+  pre code .s { color: var(--accent-2); }
+  pre code .c { color: var(--muted); font-style: italic; }
+  pre code .f { color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: .92rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); font-weight: 600; }
+  tr:hover td { background: var(--panel); }
+
+  ul.plain { padding-left: 20px; color: var(--muted); }
+  ul.plain li { margin: 6px 0; }
+  ul.plain b { color: var(--text); }
+
+  footer { padding: 40px 0; text-align: center; color: var(--muted); font-size: .85rem; }
+  a { color: var(--accent); }
+
+  .flow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .flow-node {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-weight: 600;
+    font-size: .9rem;
+    text-align: center;
+  }
+  .flow-arrow { color: var(--accent); font-size: 1.4rem; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Learn <span>MCP</span> Visually</h1>
+    <p>The <b>Model Context Protocol</b> — an open standard that lets AI apps plug into any data source or tool. Think of it as <b>“USB-C for AI applications.”</b></p>
+    <div class="badges">
+      <span class="badge">Open standard <b>· Anthropic 2024</b></span>
+      <span class="badge">Transports <b>· stdio, Streamable HTTP</b></span>
+      <span class="badge">Primitives <b>· Tools, Resources, Prompts</b></span>
+      <span class="badge">Now <b>· 10,000+ servers</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 1. THE PROBLEM ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">01</span>The problem MCP solves</h2>
+    <p class="lede">Before MCP, every AI app had to write its own one-off integration for every data source. That meant N×M custom connectors, each with its own auth, schema, and API.</p>
+    <div class="grid cols-2">
+      <div class="card">
+        <h4><span class="tag">Before</span> — point-to-point spaghetti</h4>
+        <p>Every app ↔ every service needed a bespoke adapter. Fragile, duplicated, impossible to scale.</p>
+        <div class="diagram-frame">
+          <svg viewBox="0 0 560 240" width="560" height="240" role="img" aria-label="Messy point-to-point integrations">
+            <!-- apps -->
+            <g font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" fill="#0b0e14">
+              <rect x="15" y="20" width="110" height="42" rx="8" fill="#ff6bcb"/><text x="70" y="46">App A</text>
+              <rect x="15" y="100" width="110" height="42" rx="8" fill="#ff6bcb"/><text x="70" y="126">App B</text>
+              <rect x="15" y="180" width="110" height="42" rx="8" fill="#ff6bcb"/><text x="70" y="206">App C</text>
+            </g>
+            <!-- services -->
+            <g font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" fill="#0b0e14">
+              <rect x="435" y="20" width="110" height="42" rx="8" fill="#52d6a2"/><text x="490" y="46">GitHub</text>
+              <rect x="435" y="100" width="110" height="42" rx="8" fill="#52d6a2"/><text x="490" y="126">Database</text>
+              <rect x="435" y="180" width="110" height="42" rx="8" fill="#52d6a2"/><text x="490" y="206">Slack</text>
+            </g>
+            <!-- wires -->
+            <g stroke="#566078" stroke-width="1.6" opacity="0.8">
+              <line x1="125" y1="41" x2="435" y2="41"/>
+              <line x1="125" y1="41" x2="435" y2="121"/>
+              <line x1="125" y1="41" x2="435" y2="201"/>
+              <line x1="125" y1="121" x2="435" y2="41"/>
+              <line x1="125" y1="121" x2="435" y2="121"/>
+              <line x1="125" y1="121" x2="435" y2="201"/>
+              <line x1="125" y1="201" x2="435" y2="41"/>
+              <line x1="125" y1="201" x2="435" y2="121"/>
+              <line x1="125" y1="201" x2="435" y2="201"/>
+            </g>
+            <text x="280" y="115" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#ff6b6b">9 custom connectors ✗</text>
+          </svg>
+        </div>
+      </div>
+      <div class="card">
+        <h4><span class="tag">After</span> — one protocol, many plugs</h4>
+        <p>Each app implements MCP once. Each service exposes one MCP server. They connect like USB devices.</p>
+        <div class="diagram-frame">
+          <svg viewBox="0 0 560 240" width="560" height="240" role="img" aria-label="Unified MCP bus">
+            <!-- apps -->
+            <g font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" fill="#0b0e14">
+              <rect x="15" y="20" width="110" height="42" rx="8" fill="#ff6bcb"/><text x="70" y="46">App A</text>
+              <rect x="15" y="100" width="110" height="42" rx="8" fill="#ff6bcb"/><text x="70" y="126">App B</text>
+              <rect x="15" y="180" width="110" height="42" rx="8" fill="#ff6bcb"/><text x="70" y="206">App C</text>
+            </g>
+            <!-- bus -->
+            <rect x="225" y="40" width="120" height="160" rx="12" fill="#7c9cff" opacity="0.15" stroke="#7c9cff" stroke-width="2"/>
+            <text x="285" y="125" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#7c9cff" font-weight="700">MCP</text>
+            <text x="285" y="142" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">bus / protocol</text>
+            <!-- services -->
+            <g font-family="ui-monospace,monospace" font-size="11" text-anchor="middle" fill="#0b0e14">
+              <rect x="435" y="20" width="110" height="42" rx="8" fill="#52d6a2"/><text x="490" y="46">GitHub</text>
+              <rect x="435" y="100" width="110" height="42" rx="8" fill="#52d6a2"/><text x="490" y="126">Database</text>
+              <rect x="435" y="180" width="110" height="42" rx="8" fill="#52d6a2"/><text x="490" y="206">Slack</text>
+            </g>
+            <!-- wires -->
+            <g stroke="#7c9cff" stroke-width="2" opacity="0.9">
+              <line x1="125" y1="41" x2="225" y2="60"/>
+              <line x1="125" y1="121" x2="225" y2="125"/>
+              <line x1="125" y1="201" x2="225" y2="190"/>
+              <line x1="345" y1="60" x2="435" y2="41"/>
+              <line x1="345" y1="125" x2="435" y2="121"/>
+              <line x1="345" y1="190" x2="435" y2="201"/>
+            </g>
+            <text x="285" y="230" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#52d6a2">1 protocol, 6 connections ✓</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. ARCHITECTURE ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">02</span>Architecture: the three roles</h2>
+    <p class="lede">An MCP conversation has exactly three participants. Understanding who talks to whom is 80% of the protocol.</p>
+
+    <div class="diagram-frame">
+      <svg viewBox="0 0 880 340" width="880" height="340" role="img" aria-label="MCP architecture diagram">
+        <!-- HOST -->
+        <g>
+          <rect x="30" y="90" width="230" height="160" rx="14" fill="#161a23" stroke="#ff6bcb" stroke-width="2"/>
+          <rect x="30" y="90" width="230" height="34" rx="14" fill="#ff6bcb" opacity="0.15"/>
+          <text x="145" y="112" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#ff6bcb" font-weight="700">HOST</text>
+          <text x="145" y="150" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa3b5">Claude Desktop · IDEs · Copilots</text>
+          <rect x="55" y="165" width="180" height="34" rx="7" fill="#ff6bcb" opacity="0.12" stroke="#ff6bcb" stroke-width="1"/>
+          <text x="145" y="186" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">OAuth · authz · orchestration</text>
+          <rect x="55" y="207" width="180" height="34" rx="7" fill="#ff6bcb" opacity="0.12" stroke="#ff6bcb" stroke-width="1"/>
+          <text x="145" y="228" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">owns the LLM + context window</text>
+        </g>
+        <!-- CLIENT -->
+        <g>
+          <rect x="325" y="90" width="230" height="160" rx="14" fill="#161a23" stroke="#7c9cff" stroke-width="2"/>
+          <rect x="325" y="90" width="230" height="34" rx="14" fill="#7c9cff" opacity="0.15"/>
+          <text x="440" y="112" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#7c9cff" font-weight="700">CLIENT</text>
+          <text x="440" y="150" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa3b5">1 per server, lives in the host</text>
+          <rect x="350" y="165" width="180" height="34" rx="7" fill="#7c9cff" opacity="0.12" stroke="#7c9cff" stroke-width="1"/>
+          <text x="440" y="186" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">init · negotiate protocol</text>
+          <rect x="350" y="207" width="180" height="34" rx="7" fill="#7c9cff" opacity="0.12" stroke="#7c9cff" stroke-width="1"/>
+          <text x="440" y="228" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">call tools · read resources</text>
+        </g>
+        <!-- SERVER -->
+        <g>
+          <rect x="620" y="90" width="230" height="160" rx="14" fill="#161a23" stroke="#52d6a2" stroke-width="2"/>
+          <rect x="620" y="90" width="230" height="34" rx="14" fill="#52d6a2" opacity="0.15"/>
+          <text x="735" y="112" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#52d6a2" font-weight="700">SERVER</text>
+          <text x="735" y="150" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9aa3b5">exposes data &amp; tools</text>
+          <rect x="645" y="165" width="180" height="34" rx="7" fill="#52d6a2" opacity="0.12" stroke="#52d6a2" stroke-width="1"/>
+          <text x="735" y="186" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">Tools · Resources · Prompts</text>
+          <rect x="645" y="207" width="180" height="34" rx="7" fill="#52d6a2" opacity="0.12" stroke="#52d6a2" stroke-width="1"/>
+          <text x="735" y="228" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">behind it: GitHub, DBs, APIs</text>
+        </g>
+        <!-- arrows -->
+        <g>
+          <defs>
+            <marker id="ah" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+              <path d="M0,0 L10,4 L0,8 Z" fill="#7c9cff"/>
+            </marker>
+          </defs>
+          <line x1="260" y1="130" x2="318" y2="130" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#ah)"/>
+          <line x1="555" y1="130" x2="613" y2="130" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#ah)"/>
+        </g>
+        <!-- labels -->
+        <text x="289" y="118" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">JSON-RPC 2.0</text>
+        <text x="584" y="118" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">JSON-RPC 2.0</text>
+        <!-- data sources -->
+        <rect x="645" y="265" width="180" height="40" rx="8" fill="#1c2230" stroke="#2a3242"/>
+        <text x="735" y="290" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">Data sources &amp; services</text>
+        <line x1="735" y1="250" x2="735" y2="265" stroke="#566078" stroke-width="2"/>
+      </svg>
+    </div>
+    <p class="caption">MCP host ↔ client ↔ server. The client is a thin adapter inside the host, one per server connection.</p>
+
+    <div class="grid cols-3">
+      <div class="card">
+        <h4><span style="color:var(--pink)">◆</span> Host</h4>
+        <p>The app you use. Owns the model, the context window, and decides <b>when</b> to call servers. Handles OAuth and permission prompts.</p>
+        <p style="margin-top:8px"><code>Claude Desktop</code> · <code>VS Code</code> · <code>Cursor</code> · <code>opencode</code></p>
+      </div>
+      <div class="card">
+        <h4><span style="color:var(--accent)">◆</span> Client</h4>
+        <p>Runs <b>inside the host</b>, one per MCP server. Maintains the connection and speaks JSON-RPC. The host can run many clients simultaneously.</p>
+      </div>
+      <div class="card">
+        <h4><span style="color:var(--accent-2)">◆</span> Server</h4>
+        <p>A standalone program exposing <b>capabilities</b> — tools, resources, prompts — over a transport. Multiple hosts can share one server.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. CORE PRIMITIVES ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">03</span>The three primitives</h2>
+    <p class="lede">Servers expose three kinds of capabilities. Learning which to reach for is the key design decision when building an MCP server.</p>
+
+    <div class="diagram-frame">
+      <svg viewBox="0 0 880 300" width="880" height="300" role="img" aria-label="Three MCP primitives">
+        <!-- Tools -->
+        <g>
+          <rect x="20" y="40" width="260" height="220" rx="14" fill="#161a23" stroke="#7c9cff" stroke-width="2"/>
+          <text x="150" y="78" text-anchor="middle" font-family="ui-monospace,monospace" font-size="14" fill="#7c9cff" font-weight="700">🔧 TOOLS</text>
+          <text x="150" y="100" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">model-controlled · actions</text>
+          <line x1="40" y1="112" x2="260" y2="112" stroke="#2a3242"/>
+          <rect x="40" y="128" width="220" height="40" rx="8" fill="#1c2230" stroke="#7c9cff" opacity="0.5"/>
+          <text x="150" y="143" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">get_weather(city, units)</text>
+          <text x="150" y="158" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">do something / side effects</text>
+          <rect x="40" y="178" width="220" height="40" rx="8" fill="#1c2230" stroke="#7c9cff" opacity="0.5"/>
+          <text x="150" y="193" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">create_issue(title, labels)</text>
+          <text x="150" y="208" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">write to external systems</text>
+          <text x="150" y="245" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#ffb86c">model decides when to call</text>
+        </g>
+        <!-- Resources -->
+        <g>
+          <rect x="310" y="40" width="260" height="220" rx="14" fill="#161a23" stroke="#52d6a2" stroke-width="2"/>
+          <text x="440" y="78" text-anchor="middle" font-family="ui-monospace,monospace" font-size="14" fill="#52d6a2" font-weight="700">📄 RESOURCES</text>
+          <text x="440" y="100" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">application-controlled · context</text>
+          <line x1="330" y1="112" x2="550" y2="112" stroke="#2a3242"/>
+          <rect x="330" y="128" width="220" height="40" rx="8" fill="#1c2230" stroke="#52d6a2" opacity="0.5"/>
+          <text x="440" y="143" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">docs://reports/2026.md</text>
+          <text x="440" y="158" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">read data into context</text>
+          <rect x="330" y="178" width="220" height="40" rx="8" fill="#1c2230" stroke="#52d6a2" opacity="0.5"/>
+          <text x="440" y="193" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">db://customers/42</text>
+          <text x="440" y="208" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">URI-addressed, MIME-typed</text>
+          <text x="440" y="245" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#ffb86c">host/app controls the fetch</text>
+        </g>
+        <!-- Prompts -->
+        <g>
+          <rect x="600" y="40" width="260" height="220" rx="14" fill="#161a23" stroke="#b58cff" stroke-width="2"/>
+          <text x="730" y="78" text-anchor="middle" font-family="ui-monospace,monospace" font-size="14" fill="#b58cff" font-weight="700">✏️ PROMPTS</text>
+          <text x="730" y="100" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">user-controlled · templates</text>
+          <line x1="620" y1="112" x2="840" y2="112" stroke="#2a3242"/>
+          <rect x="620" y="128" width="220" height="40" rx="8" fill="#1c2230" stroke="#b58cff" opacity="0.5"/>
+          <text x="730" y="143" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">code-review (reusable)</text>
+          <text x="730" y="158" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">curated prompt templates</text>
+          <rect x="620" y="178" width="220" height="40" rx="8" fill="#1c2230" stroke="#b58cff" opacity="0.5"/>
+  <text x="730" y="193" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">with {language} and {level}</text>
+          <text x="730" y="208" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">arguments filled by user/host</text>
+          <text x="730" y="245" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#ffb86c">user chooses to invoke</text>
+        </g>
+      </svg>
+    </div>
+
+    <table>
+      <thead><tr><th></th><th>Tools</th><th>Resources</th><th>Prompts</th></tr></thead>
+      <tbody>
+        <tr><td><b>Who triggers</b></td><td>The <b>model</b> (during a task)</td><td>The <b>app/host</b> or model</td><td>The <b>user</b> or app</td></tr>
+        <tr><td><b>Semantics</b></td><td>Actions — do something</td><td>Context — give data</td><td>Instructions — prompt templates</td></tr>
+        <tr><td><b>Typical use</b></td><td>Call an API, write a file, search</td><td>Load a doc, fetch a row, query</td><td>“Review this PR”, “Debug setup”</td></tr>
+        <tr><td><b>Can mutate state?</b></td><td>Yes</td><td>Usually read-only</td><td>No</td></tr>
+        <tr><td><b>Discovery</b></td><td><code>tools/list</code> → <code>tools/call</code></td><td><code>resources/list</code> → <code>resources/read</code></td><td><code>prompts/list</code> → <code>prompts/get</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 4. THE HANDSHAKE ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">04</span>Lifecycle: the initialize handshake</h2>
+    <p class="lede">Every session starts with a handshake. The client and server announce their capabilities and negotiate a protocol version — then discovery begins.</p>
+
+    <div class="diagram-frame">
+      <svg viewBox="0 0 880 460" width="880" height="460" role="img" aria-label="MCP session lifecycle sequence diagram">
+        <defs>
+          <marker id="arr" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L10,4 L0,8 Z" fill="#7c9cff"/>
+          </marker>
+          <marker id="arr2" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L10,4 L0,8 Z" fill="#52d6a2"/>
+          </marker>
+        </defs>
+        <rect x="60" y="10" width="320" height="40" rx="9" fill="#1c2230" stroke="#7c9cff" stroke-width="2"/>
+        <text x="220" y="35" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#7c9cff" font-weight="700">CLIENT</text>
+        <rect x="500" y="10" width="320" height="40" rx="9" fill="#1c2230" stroke="#52d6a2" stroke-width="2"/>
+        <text x="660" y="35" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#52d6a2" font-weight="700">SERVER</text>
+        <line x1="220" y1="60" x2="220" y2="430" stroke="#566078" stroke-dasharray="4 4"/>
+        <line x1="660" y1="60" x2="660" y2="430" stroke="#566078" stroke-dasharray="4 4"/>
+
+        <!-- phase 1 -->
+        <text x="440" y="85" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#ffb86c" font-weight="700">1 · INITIALIZE</text>
+        <line x1="225" y1="105" x2="652" y2="105" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#arr)"/>
+        <text x="220" y="98" text-anchor="end" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">initialize {protocolVersion, capabilities}</text>
+        <line x1="655" y1="125" x2="228" y2="125" stroke="#52d6a2" stroke-width="2.5" marker-end="url(#arr2)"/>
+        <text x="660" y="118" text-anchor="start" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">response {protocolVersion, capabilities}</text>
+
+        <!-- phase 2 -->
+        <text x="440" y="165" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#ffb86c" font-weight="700">2 · NOTIFICATIONS</text>
+        <line x1="225" y1="185" x2="652" y2="185" stroke="#566078" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="220" y="178" text-anchor="end" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">notifications/initialized</text>
+
+        <!-- phase 3 -->
+        <text x="440" y="225" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#ffb86c" font-weight="700">3 · DISCOVERY</text>
+        <line x1="225" y1="245" x2="652" y2="245" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#arr)"/>
+        <text x="220" y="238" text-anchor="end" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">tools/list · resources/list · prompts/list</text>
+        <line x1="655" y1="265" x2="228" y2="265" stroke="#52d6a2" stroke-width="2.5" marker-end="url(#arr2)"/>
+        <text x="660" y="258" text-anchor="start" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">capability manifests</text>
+
+        <!-- phase 4 -->
+        <text x="440" y="305" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#ffb86c" font-weight="700">4 · OPERATION</text>
+        <line x1="225" y1="325" x2="652" y2="325" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#arr)"/>
+        <text x="220" y="318" text-anchor="end" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">tools/call {name, arguments}</text>
+        <line x1="655" y1="345" x2="228" y2="345" stroke="#52d6a2" stroke-width="2.5" marker-end="url(#arr2)"/>
+        <text x="660" y="338" text-anchor="start" font-family="ui-monospace,monospace" font-size="10.5" fill="#e6e9f0">result {content[], isError?}</text>
+
+        <!-- phase 5 -->
+        <text x="440" y="385" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#ffb86c" font-weight="700">5 · TEARDOWN</text>
+        <line x1="225" y1="405" x2="652" y2="405" stroke="#566078" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="220" y="398" text-anchor="end" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">notifications/cancelled (or close)</text>
+      </svg>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h4>Messages are JSON-RPC 2.0</h4>
+        <pre><code><span class="c">// a tool call</span>
+{
+  <span class="k">"jsonrpc"</span>: <span class="s">"2.0"</span>,
+  <span class="k">"id"</span>: <span class="s">"req-1"</span>,
+  <span class="k">"method"</span>: <span class="s">"tools/call"</span>,
+  <span class="k">"params"</span>: {
+    <span class="k">"name"</span>: <span class="s">"get_weather"</span>,
+    <span class="k">"arguments"</span>: { <span class="k">"city"</span>: <span class="s">"Paris"</span> }
+  }
+}</code></pre>
+      </div>
+      <div class="card">
+        <h4>Three message shapes</h4>
+        <ul class="plain">
+          <li><b>Request</b> — client → server, expects a response.</li>
+          <li><b>Response</b> — the answer, keyed by the request <code>id</code>.</li>
+          <li><b>Notification</b> — one-way fire-and-forget, no <code>id</code>, no reply.</li>
+        </ul>
+        <p style="margin-top:12px;color:var(--muted)">Errors come back as JSON-RPC <code>error</code> objects with codes — including <code>ProtocolError</code>, <code>InvalidRequest</code>, <code>MethodNotFound</code>, and <code>NotInitialized</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. TRANSPORTS ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">05</span>Transports: how messages travel</h2>
+    <p class="lede">The same protocol runs over different pipes. stdio for local tools, Streamable HTTP for remote services.</p>
+
+    <div class="diagram-frame">
+      <svg viewBox="0 0 880 330" width="880" height="330" role="img" aria-label="MCP transports comparison">
+        <!-- stdio -->
+        <g>
+          <rect x="20" y="40" width="400" height="250" rx="14" fill="#161a23" stroke="#7c9cff" stroke-width="2"/>
+          <text x="220" y="78" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#7c9cff" font-weight="700">STDIO</text>
+          <text x="220" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">local · child process · instant</text>
+          <line x1="40" y1="110" x2="400" y2="110" stroke="#2a3242"/>
+          <rect x="50" y="126" width="130" height="50" rx="9" fill="#1c2230" stroke="#7c9cff"/>
+          <text x="115" y="148" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#e6e9f0">HOST</text>
+          <text x="115" y="164" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#9aa3b5">spawns process</text>
+          <rect x="240" y="126" width="130" height="50" rx="9" fill="#1c2230" stroke="#52d6a2"/>
+          <text x="305" y="148" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#e6e9f0">MCP SERVER</text>
+          <text x="305" y="164" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#9aa3b5">node / python / go</text>
+          <line x1="180" y1="140" x2="235" y2="140" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#ah)"/>
+          <line x1="235" y1="160" x2="180" y2="160" stroke="#52d6a2" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="207" y="126" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#9aa3b5">stdin ↓ · stdout ↑</text>
+          <rect x="50" y="200" width="340" height="66" rx="9" fill="#1c2230" stroke="#2a3242"/>
+          <text x="220" y="222" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#ffb86c">local-only tools, dev tooling,</text>
+          <text x="220" y="238" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#ffb86c">file access, offline, zero server setup</text>
+          <text x="220" y="256" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">claude config: “command”: “npx -y server”</text>
+        </g>
+        <!-- http -->
+        <g>
+          <rect x="460" y="40" width="400" height="250" rx="14" fill="#161a23" stroke="#52d6a2" stroke-width="2"/>
+          <text x="660" y="78" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" fill="#52d6a2" font-weight="700">STREAMABLE HTTP</text>
+          <text x="660" y="98" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" fill="#9aa3b5">remote · POST + SSE · async</text>
+          <line x1="480" y1="110" x2="840" y2="110" stroke="#2a3242"/>
+          <rect x="490" y="126" width="120" height="50" rx="9" fill="#1c2230" stroke="#7c9cff"/>
+          <text x="550" y="148" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#e6e9f0">HOST</text>
+          <text x="550" y="164" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#9aa3b5">anywhere</text>
+          <rect x="690" y="126" width="130" height="50" rx="9" fill="#1c2230" stroke="#52d6a2"/>
+          <text x="755" y="148" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#e6e9f0">MCP SERVER</text>
+          <text x="755" y="164" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#9aa3b5">hosted endpoint</text>
+          <line x1="610" y1="140" x2="685" y2="140" stroke="#7c9cff" stroke-width="2.5" marker-end="url(#ah)"/>
+          <line x1="685" y1="160" x2="610" y2="160" stroke="#52d6a2" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="647" y="126" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9.5" fill="#9aa3b5">POST ↓ · SSE ↑</text>
+          <rect x="490" y="200" width="340" height="66" rx="9" fill="#1c2230" stroke="#2a3242"/>
+          <text x="660" y="222" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#ffb86c">remote APIs, multi-user services,</text>
+          <text x="660" y="238" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#ffb86c">OAuth, authz, scaling</text>
+          <text x="660" y="256" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">single POST endpoint · SSE for results</text>
+        </g>
+      </svg>
+    </div>
+
+    <table>
+      <thead><tr><th>Dimension</th><th>stdio</th><th>Streamable HTTP</th></tr></thead>
+      <tbody>
+        <tr><td><b>Scope</b></td><td>Local, same machine</td><td>Remote, networked</td></tr>
+        <tr><td><b>Lifespan</b></td><td>Bound to child process</td><td>Stateless-ish sessions via headers</td></tr>
+        <tr><td><b>Auth</b></td><td>None / OS-level</td><td>OAuth 2.1, Bearer tokens</td></tr>
+        <tr><td><b>Streaming</b></td><td>stdout line-by-line</td><td>SSE (server-sent events)</td></tr>
+        <tr><td><b>When</b></td><td>Dev tools, file systems</td><td>SaaS integrations, shared services</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 6. SERVER EXAMPLE ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">06</span>A minimal server in Python</h2>
+    <p class="lede">About 20 lines is all it takes. This server exposes one tool that the model can call through any MCP host.</p>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <pre><code><span class="c"># weather_server.py</span>
+<span class="k">from</span> mcp.server.fastmcp <span class="k">import</span> FastMCP
+
+mcp = FastMCP(<span class="s">"Weather"</span>)
+
+<span class="k">@mcp.tool</span>()
+<span class="k">def</span> <span class="f">get_weather</span>(city: str) -> str:
+    <span class="s">"""Return current weather for a city."""</span>
+    <span class="k">return</span> f<span class="s">"{city}: 22°C, partly cloudy"</span>
+
+<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
+    mcp.run()  <span class="c"># stdio by default</span></code></pre>
+      </div>
+      <div class="card">
+        <h4>Wire it up in a host</h4>
+        <pre><code><span class="c"># Claude Desktop config
+# claude_desktop_config.json</span>
+{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"weather"</span>: {
+      <span class="k">"command"</span>: <span class="s">"python"</span>,
+      <span class="k">"args"</span>: [<span class="s">"weather_server.py"</span>]
+    }
+  }
+}</code></pre>
+        <p style="color:var(--muted);font-size:.9rem;margin-top:10px">The host spawns the process, the handshake runs, and <code>get_weather</code> becomes callable by the model — no HTTP endpoint needed.</p>
+      </div>
+    </div>
+
+    <div class="diagram-frame">
+      <svg viewBox="0 0 880 200" width="880" height="200" role="img" aria-label="end-to-end data flow">
+        <rect x="20" y="55" width="150" height="90" rx="12" fill="#1c2230" stroke="#ff6bcb" stroke-width="2"/>
+        <text x="95" y="95" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#ff6bcb" font-weight="700">USER</text>
+        <text x="95" y="118" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">“weather in Paris?”</text>
+
+        <rect x="230" y="55" width="150" height="90" rx="12" fill="#1c2230" stroke="#7c9cff" stroke-width="2"/>
+        <text x="305" y="95" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#7c9cff" font-weight="700">LLM</text>
+        <text x="305" y="118" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">decides to call tool</text>
+
+        <rect x="440" y="55" width="150" height="90" rx="12" fill="#1c2230" stroke="#52d6a2" stroke-width="2"/>
+        <text x="515" y="95" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#52d6a2" font-weight="700">MCP SERVER</text>
+        <text x="515" y="118" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">get_weather(city=Paris)</text>
+
+        <rect x="650" y="55" width="150" height="90" rx="12" fill="#1c2230" stroke="#ffb86c" stroke-width="2"/>
+        <text x="725" y="95" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" fill="#ffb86c" font-weight="700">DATA SOURCE</text>
+        <text x="725" y="118" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">weather API</text>
+
+        <g stroke="#7c9cff" stroke-width="2.5" fill="none">
+          <path d="M170 100 H225" marker-end="url(#arr)"/>
+          <path d="M380 100 H435" marker-end="url(#arr)"/>
+          <path d="M590 100 H645" marker-end="url(#arr)"/>
+        </g>
+        <g stroke="#52d6a2" stroke-width="2.5" fill="none">
+          <path d="M225 130 H170" marker-end="url(#arr2)"/>
+          <path d="M435 130 H380" marker-end="url(#arr2)"/>
+          <path d="M645 130 H590" marker-end="url(#arr2)"/>
+        </g>
+        <text x="197" y="165" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">prompt</text>
+        <text x="407" y="165" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">tool call</text>
+        <text x="617" y="165" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">execute</text>
+        <text x="197" y="180" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">answer</text>
+        <text x="407" y="180" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">result</text>
+        <text x="617" y="180" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" fill="#9aa3b5">data</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. MENTAL MODEL ============ -->
+<section>
+  <div class="wrap">
+    <h2><span class="num">07</span>Your mental model</h2>
+    <p class="lede">Five sentences that capture everything above:</p>
+    <div class="grid cols-3">
+      <div class="card">
+        <h4><span style="color:var(--accent)">1</span> One protocol</h4>
+        <p>JSON-RPC 2.0 with an <code>initialize</code> handshake that negotiates capabilities and version.</p>
+      </div>
+      <div class="card">
+        <h4><span style="color:var(--accent)">2</span> Three roles</h4>
+        <p>Host owns the LLM, client adapts the connection, server exposes capabilities.</p>
+      </div>
+      <div class="card">
+        <h4><span style="color:var(--accent)">3</span> Three primitives</h4>
+        <p>Tools (model does), Resources (app reads), Prompts (user picks).</p>
+      </div>
+      <div class="card">
+        <h4><span style="color:var(--accent)">4</span> Two transports</h4>
+        <p>stdio for local, Streamable HTTP for remote — same messages on both.</p>
+      </div>
+      <div class="card">
+        <h4><span style="color:var(--accent)">5</span> Build once, reuse</h4>
+        <p>One server works in every MCP host, and every host works with every server.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    A visual primer on the Model Context Protocol · spec at <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">modelcontextprotocol.io</a>
+  </div>
+</footer>
+
+</body>
+</html>
